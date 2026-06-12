@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulário — Mentoria Leilões Efetive</title>
+<style>
+  /* ================================================
+     TOKENS DE DESIGN — LEILÕES EFETIVE
+     Paleta: azul marinho profundo + dourado + branco
+  ================================================ */
+  :root {
+    --bg-deep:       #0a1628;
+    --bg-mid:        #0d1f3c;
+    --bg-card:       rgba(255,255,255,0.05);
+    --bg-card-hover: rgba(255,255,255,0.10);
+    --gold:          #c9a84c;
+    --gold-light:    #e2c97e;
+    --white:         #ffffff;
+    --white-70:      rgba(255,255,255,0.70);
+    --white-40:      rgba(255,255,255,0.40);
+    --white-15:      rgba(255,255,255,0.15);
+    --blue-btn:      #1a3a6b;
+    --blue-btn-h:    #254f95;
+    --selected-bg:   rgba(201,168,76,0.18);
+    --selected-bd:   #c9a84c;
+    --progress-h:    3px;
+    --radius:        10px;
+    --transition:    0.3s cubic-bezier(.4,0,.2,1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--bg-deep);
+    color: var(--white);
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── BARRA DE PROGRESSO ── */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: var(--progress-h);
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width 0.5s ease;
+    z-index: 100;
+  }
+
+  /* ── CONTADOR DE ETAPA ── */
+  #step-counter {
+    position: fixed;
+    top: 18px; right: 20px;
+    font-size: 12px;
+    font-family: 'Arial', sans-serif;
+    color: var(--white-40);
+    letter-spacing: 1px;
+    z-index: 100;
+  }
+
+  /* ── SETAS DE NAVEGAÇÃO ── */
+  #nav-arrows {
+    position: fixed;
+    right: 20px;
+    bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 100;
+  }
+  .arrow-btn {
+    width: 36px; height: 36px;
+    background: var(--white-15);
+    border: none;
+    border-radius: 50%;
+    color: var(--white);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background var(--transition);
+  }
+  .arrow-btn:hover { background: var(--white-40); }
+
+  /* ── CONTAINER PRINCIPAL ── */
+  #form-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── TELAS ── */
+  .screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 40px 80px;
+    opacity: 0;
+    transform: translateY(60px);
+    pointer-events: none;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    background:
+      radial-gradient(ellipse at 20% 60%, rgba(26,58,107,0.45) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(10,22,40,0.8) 0%, transparent 60%),
+      var(--bg-deep);
+  }
+  .screen.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+  .screen.exit-up {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+
+  /* ── TIPOGRAFIA ── */
+  .screen-title {
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 14px;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+  .screen-sub {
+    font-size: 15px;
+    color: var(--white-70);
+    font-family: 'Arial', sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 560px;
+  }
+  .screen-sub ul {
+    margin-top: 10px;
+    padding-left: 0;
+    list-style: none;
+  }
+  .screen-sub ul li::before {
+    content: "• ";
+    color: var(--gold);
+  }
+  .screen-sub .notice {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--white-40);
+    font-style: italic;
+  }
+
+  /* ── CAMPO DE TEXTO ── */
+  .text-input {
+    width: 100%;
+    max-width: 560px;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--white-40);
+    color: var(--white);
+    font-size: 18px;
+    font-family: 'Georgia', serif;
+    padding: 10px 0 12px;
+    outline: none;
+    transition: border-color var(--transition);
+    caret-color: var(--gold);
+  }
+  .text-input::placeholder { color: var(--white-40); }
+  .text-input:focus { border-bottom-color: var(--gold); }
+
+  textarea.text-input {
+    resize: none;
+    min-height: 80px;
+    line-height: 1.6;
+  }
+
+  .input-hint {
+    font-size: 12px;
+    color: var(--white-40);
+    font-family: 'Arial', sans-serif;
+    margin-top: 8px;
+  }
+
+  /* ── CAMPO TELEFONE ── */
+  .phone-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 560px;
+    border-bottom: 1.5px solid var(--white-40);
+    padding-bottom: 10px;
+    transition: border-color var(--transition);
+  }
+  .phone-row:focus-within { border-color: var(--gold); }
+  .phone-flag { font-size: 22px; }
+  .phone-ddd {
+    background: var(--white-15);
+    border: none;
+    color: var(--white);
+    font-size: 15px;
+    font-family: 'Arial', sans-serif;
+    padding: 6px 10px;
+    border-radius: 6px;
+    width: 70px;
+    outline: none;
+  }
+  .phone-num {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-size: 18px;
+    font-family: 'Georgia', serif;
+    outline: none;
+    caret-color: var(--gold);
+  }
+  .phone-num::placeholder { color: var(--white-40); }
+
+  /* ── OPÇÕES DE MÚLTIPLA ESCOLHA ── */
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 560px;
+    margin-bottom: 4px;
+  }
+  .option-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--white-15);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: background var(--transition), border-color var(--transition);
+    font-family: 'Arial', sans-serif;
+    font-size: 15px;
+    color: var(--white);
+    line-height: 1.4;
+    user-select: none;
+  }
+  .option-item:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--white-40);
+  }
+  .option-item.selected {
+    background: var(--selected-bg);
+    border-color: var(--selected-bd);
+    color: var(--gold-light);
+  }
+  .option-letter {
+    min-width: 26px; height: 26px;
+    background: var(--white-15);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+    color: var(--white-70);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .option-item.selected .option-letter {
+    background: var(--gold);
+    color: var(--bg-deep);
+  }
+
+  /* ── BOTÃO AVANÇAR ── */
+  .btn-next {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    background: var(--blue-btn);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 14px 28px;
+    font-size: 15px;
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+  }
+  .btn-next:hover {
+    background: var(--blue-btn-h);
+    transform: translateY(-1px);
+  }
+  .btn-next svg { width: 16px; height: 16px; }
+
+  /* ── TELA DE ABERTURA ── */
+  #screen-0 .screen-title { font-size: clamp(30px, 6vw, 46px); }
+
+  /* ── TELA FINAL ── */
+  #screen-final {
+    align-items: center;
+    text-align: center;
+  }
+  .final-icon {
+    font-size: 52px;
+    margin-bottom: 24px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+  #screen-final .screen-title { font-size: clamp(26px, 5vw, 36px); }
+  #screen-final .screen-sub   { max-width: 400px; text-align: center; }
+  .gold-line {
+    width: 50px; height: 2px;
+    background: var(--gold);
+    margin: 20px auto;
+    border-radius: 2px;
+  }
+
+  /* ── VALIDAÇÃO ── */
+  .error-msg {
+    font-size: 12px;
+    color: #e87070;
+    font-family: 'Arial', sans-serif;
+    margin-top: 8px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* ── RESPONSIVO ── */
+  @media (max-width: 480px) {
+    .screen { padding: 50px 24px 80px; }
+    .screen-title { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- BARRA DE PROGRESSO -->
+<div id="progress-bar"></div>
+
+<!-- CONTADOR -->
+<div id="step-counter"></div>
+
+<!-- SETAS -->
+<div id="nav-arrows">
+  <button class="arrow-btn" id="btn-up" onclick="goUp()" title="Voltar">↑</button>
+  <button class="arrow-btn" id="btn-down" onclick="goDown()" title="Avançar">↓</button>
+</div>
+
+<!-- ============================================================
+     FORMULÁRIO
+     Total de telas: 1 abertura + 11 perguntas + 1 final = 13
+============================================================ -->
+<div id="form-container">
+
+  <!-- ── TELA 0: ABERTURA ── -->
+  <div class="screen active" id="screen-0">
+    <div class="screen-title">Plano Estratégico<br>Personalizado</div>
+    <div class="screen-sub">
+      Em uma sessão de 30 minutos, vamos identificar o que te impede de arrematar seu primeiro imóvel em leilão — ou escalar seus resultados — e traçar o caminho mais seguro e lucrativo para o seu perfil.
+      <br><br>
+      Você vai receber orientação sobre:
+      <ul>
+        <li>Como identificar oportunidades reais de lucro</li>
+        <li>Como analisar matrícula e edital com segurança</li>
+        <li>Como agir no pós-arrematação para revenda ou aluguel com mais retorno</li>
+      </ul>
+      <div class="notice">
+        Preencha com atenção — cada resposta nos ajuda a entender se podemos te ajudar de verdade.<br>
+        O envio <strong>não garante participação</strong>. Apenas perfis alinhados serão convidados.
+      </div>
+    </div>
+    <button class="btn-next" onclick="next()">
+      Começar
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+
+  <!-- ── TELA 1: NOME ── -->
+  <div class="screen" id="screen-1">
+    <div class="screen-title">Como devemos te chamar?</div>
+    <div class="screen-sub">Seu primeiro nome.</div>
+    <input class="text-input" id="q1" type="text" placeholder="Sua resposta..." autocomplete="given-name">
+    <div class="error-msg" id="err-1">Por favor, informe seu nome.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 2: WHATSAPP ── -->
+  <div class="screen" id="screen-2">
+    <div class="screen-title">Qual seu contato WhatsApp?<br><span style="font-size:0.7em;color:var(--white-70)">(com DDD)</span></div>
+    <div class="screen-sub">Usaremos esse número para te enviar o direcionamento.</div>
+    <div class="phone-row">
+      <span class="phone-flag">🇧🇷</span>
+      <input class="phone-ddd" id="q2-ddd" type="tel" placeholder="84" maxlength="3">
+      <input class="phone-num" id="q2-num" type="tel" placeholder="90000-0000" maxlength="10">
+    </div>
+    <div class="error-msg" id="err-2">Por favor, informe seu WhatsApp com DDD.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 3: CIDADE ── -->
+  <div class="screen" id="screen-3">
+    <div class="screen-title">Em qual cidade ou região você gostaria de investir em leilões?</div>
+    <div class="screen-sub">Pode ser onde você mora ou onde tem interesse em atuar.</div>
+    <textarea class="text-input" id="q3" placeholder="Sua resposta..." rows="2"></textarea>
+    <div class="input-hint">Aperte Shift + Enter para quebrar a linha.</div>
+    <div class="error-msg" id="err-3">Por favor, informe a cidade ou região.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 4: CAPITAL ── -->
+  <div class="screen" id="screen-4">
+    <div class="screen-title">Qual o capital que você tem disponível para investir?</div>
+    <div class="screen-sub">Isso nos ajuda a indicar a estratégia mais adequada para o seu momento.</div>
+    <div class="options-list" id="opts-4">
+      <div class="option-item" data-val="até R$50mil" onclick="selectOption(this,4)">
+        <span class="option-letter">A</span> Tenho até R$50 mil.
+      </div>
+      <div class="option-item" data-val="R$50mil–R$100mil" onclick="selectOption(this,4)">
+        <span class="option-letter">B</span> Tenho entre R$50 mil e R$100 mil.
+      </div>
+      <div class="option-item" data-val="R$100mil–R$200mil" onclick="selectOption(this,4)">
+        <span class="option-letter">C</span> Tenho entre R$100 mil e R$200 mil.
+      </div>
+      <div class="option-item" data-val="acima de R$200mil" onclick="selectOption(this,4)">
+        <span class="option-letter">D</span> Vou investir acima de R$200 mil.
+      </div>
+      <div class="option-item" data-val="sem capital agora" onclick="selectOption(this,4)">
+        <span class="option-letter">E</span> Ainda não tenho capital disponível, mas quero entender as possibilidades.
+      </div>
+    </div>
+    <div class="error-msg" id="err-4">Por favor, selecione uma opção.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 5: EXPERIÊNCIA ── -->
+  <div class="screen" id="screen-5">
+    <div class="screen-title">Qual melhor descreve sua experiência até agora com leilões?</div>
+    <div class="screen-sub">Isso me ajuda a te direcionar da forma mais eficiente.</div>
+    <div class="options-list" id="opts-5">
+      <div class="option-item" data-val="nunca participei" onclick="selectOption(this,5)">
+        <span class="option-letter">A</span> Nunca participei de um leilão, quero aprender do zero.
+      </div>
+      <div class="option-item" data-val="estudei mas não arrematei" onclick="selectOption(this,5)">
+        <span class="option-letter">B</span> Já estudei um pouco, mas ainda não arrematei.
+      </div>
+      <div class="option-item" data-val="já arrematei, quero escalar" onclick="selectOption(this,5)">
+        <span class="option-letter">C</span> Já arrematei e quero escalar meus resultados.
+      </div>
+      <div class="option-item" data-val="experiências frustrantes" onclick="selectOption(this,5)">
+        <span class="option-letter">D</span> Já tive experiências frustrantes e quero evitar erros novamente.
+      </div>
+      <div class="option-item" data-val="advogado/corretor assessoria" onclick="selectOption(this,5)">
+        <span class="option-letter">E</span> Sou advogado(a) ou corretor(a) e quero prestar assessoria para investidores.
+      </div>
+    </div>
+    <div class="error-msg" id="err-5">Por favor, selecione uma opção.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 6: OBJETIVO 12 MESES ── -->
+  <div class="screen" id="screen-6">
+    <div class="screen-title">Qual é o seu principal objetivo com leilões de imóveis nos próximos 12 meses?</div>
+    <div class="screen-sub">Esse objetivo define o plano mais adequado para você.</div>
+    <div class="options-list" id="opts-6">
+      <div class="option-item" data-val="lucrar revendendo" onclick="selectOption(this,6)">
+        <span class="option-letter">A</span> Lucrar revendendo imóveis arrematados.
+      </div>
+      <div class="option-item" data-val="renda mensal aluguel/airbnb" onclick="selectOption(this,6)">
+        <span class="option-letter">B</span> Construir renda mensal com aluguel ou Airbnb.
+      </div>
+      <div class="option-item" data-val="assessorar terceiros" onclick="selectOption(this,6)">
+        <span class="option-letter">C</span> Criar uma nova fonte de renda assessorando terceiros.
+      </div>
+      <div class="option-item" data-val="primeiro imóvel para morar" onclick="selectOption(this,6)">
+        <span class="option-letter">D</span> Comprar meu primeiro imóvel para morar.
+      </div>
+      <div class="option-item" data-val="ainda avaliando" onclick="selectOption(this,6)">
+        <span class="option-letter">E</span> Ainda estou avaliando qual caminho faz mais sentido para mim.
+      </div>
+    </div>
+    <div class="error-msg" id="err-6">Por favor, selecione uma opção.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 7: PERFIL PROFISSIONAL ── -->
+  <div class="screen" id="screen-7">
+    <div class="screen-title">Qual das opções abaixo mais representa quem você é profissionalmente hoje?</div>
+    <div class="screen-sub">Essa informação nos ajuda a entender seu nível de familiaridade com o mercado imobiliário.</div>
+    <div class="options-list" id="opts-7">
+      <div class="option-item" data-val="Corretor Imobiliário" onclick="selectOption(this,7)">
+        <span class="option-letter">A</span> Corretor Imobiliário
+      </div>
+      <div class="option-item" data-val="Advogado" onclick="selectOption(this,7)">
+        <span class="option-letter">B</span> Advogado(a)
+      </div>
+      <div class="option-item" data-val="Empresário/Autônomo" onclick="selectOption(this,7)">
+        <span class="option-letter">C</span> Empresário / Autônomo
+      </div>
+      <div class="option-item" data-val="Engenheiro/Arquiteto/Técnico" onclick="selectOption(this,7)">
+        <span class="option-letter">D</span> Engenheiro / Arquiteto / Técnico de construção
+      </div>
+      <div class="option-item" data-val="Servidor Público" onclick="selectOption(this,7)">
+        <span class="option-letter">E</span> Servidor Público
+      </div>
+      <div class="option-item" data-val="CLT" onclick="selectOption(this,7)">
+        <span class="option-letter">F</span> Trabalho no regime CLT
+      </div>
+      <div class="option-item" data-val="Outro" onclick="selectOption(this,7)">
+        <span class="option-letter">G</span> Outro
+      </div>
+    </div>
+    <div class="error-msg" id="err-7">Por favor, selecione uma opção.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 8: INSTAGRAM ── -->
+  <div class="screen" id="screen-8">
+    <div class="screen-title">Qual o seu Instagram ou o da sua empresa?</div>
+    <div class="screen-sub">Digite abaixo o "@" do Instagram. Usamos para entender melhor o seu perfil e mercado de atuação.</div>
+    <input class="text-input" id="q8" type="text" placeholder="@seuperfil">
+    <div class="error-msg" id="err-8">Por favor, informe o Instagram.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 9: MOTIVAÇÃO ── -->
+  <div class="screen" id="screen-9">
+    <div class="screen-title">Sua motivação para participar</div>
+    <div class="screen-sub">Por que você acredita que participar dessa consultoria estratégica é a oportunidade ideal para você e para o seu crescimento?</div>
+    <textarea class="text-input" id="q9" placeholder="Sua resposta..." rows="4"></textarea>
+    <div class="input-hint">Aperte Shift + Enter para quebrar a linha.</div>
+    <div class="error-msg" id="err-9">Por favor, compartilhe sua motivação.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 10: DIFERENCIAL ── -->
+  <div class="screen" id="screen-10">
+    <div class="screen-title">Sobre seu diferencial</div>
+    <div class="screen-sub">Várias pessoas vão se candidatar para este programa. O que é importante que eu saiba sobre você ao considerá-lo(a) para esta consultoria?</div>
+    <textarea class="text-input" id="q10" placeholder="Sua resposta..." rows="4"></textarea>
+    <div class="input-hint">Aperte Shift + Enter para quebrar a linha.</div>
+    <div class="error-msg" id="err-10">Por favor, compartilhe seu diferencial.</div>
+    <button class="btn-next" onclick="next()">Avançar</button>
+  </div>
+
+  <!-- ── TELA 11: PERGUNTA LIVRE ── -->
+  <div class="screen" id="screen-11">
+    <div class="screen-title">Se você estivesse conectado comigo</div>
+    <div class="screen-sub">E pudesse me fazer uma pergunta que agregasse no seu negócio ou na sua jornada com leilões, qual pergunta faria?</div>
+    <textarea class="text-input" id="q11" placeholder="Sua resposta..." rows="4"></textarea>
+    <div class="input-hint">Aperte Shift + Enter para quebrar a linha.</div>
+    <div class="error-msg" id="err-11">Por favor, escreva sua pergunta.</div>
+    <button class="btn-next" onclick="submitForm()">Enviar aplicação →</button>
+  </div>
+
+  <!-- ── TELA FINAL ── -->
+  <div class="screen" id="screen-final">
+    <div class="final-icon">✉️</div>
+    <div class="screen-title">Obrigado pela aplicação!</div>
+    <div class="gold-line"></div>
+    <div class="screen-sub">
+      Em breve nossa equipe vai te enviar um direcionamento personalizado para o seu perfil via WhatsApp.<br><br>
+      Fique atento — apenas perfis alinhados recebem o convite para a sessão estratégica.
+    </div>
+  </div>
+
+</div><!-- /form-container -->
+
+<script>
+/* ============================================================
+   ESTADO DO FORMULÁRIO
+   totalScreens = tela 0 (abertura) + 11 perguntas + final
+   currentScreen vai de 0 até 12 (final)
+============================================================ */
+const TOTAL_QUESTIONS = 11; // perguntas reais (telas 1–11)
+let currentScreen = 0;
+const answers = {};        // armazena respostas
+const selectedOptions = {}; // armazena seleção das múltipla escolha
+
+// Telas de múltipla escolha → índice da tela
+const OPTION_SCREENS = [4, 5, 6, 7];
+
+/* ── Atualiza progresso e contador ── */
+function updateUI() {
+  const finalIdx = TOTAL_QUESTIONS + 1; // índice da tela final
+  const pct = currentScreen === 0 ? 0
+            : currentScreen >= finalIdx ? 100
+            : Math.round((currentScreen / TOTAL_QUESTIONS) * 100);
+
+  document.getElementById('progress-bar').style.width = pct + '%';
+
+  const counter = document.getElementById('step-counter');
+  if (currentScreen === 0 || currentScreen >= finalIdx) {
+    counter.textContent = '';
+  } else {
+    counter.textContent = currentScreen + ' / ' + TOTAL_QUESTIONS;
+  }
+}
+
+/* ── Navega para uma tela específica ── */
+function goTo(idx) {
+  const screens = document.querySelectorAll('.screen');
+  const current = document.getElementById('screen-' + currentScreen) ||
+                  document.getElementById('screen-final');
+
+  // Saída da tela atual
+  if (current) {
+    current.classList.add('exit-up');
+    setTimeout(() => {
+      current.classList.remove('active', 'exit-up');
+    }, 450);
+  }
+
+  currentScreen = idx;
+  updateUI();
+
+  const targetId = idx <= TOTAL_QUESTIONS ? 'screen-' + idx : 'screen-final';
+  const target = document.getElementById(targetId);
+
+  setTimeout(() => {
+    if (target) {
+      target.classList.add('active');
+      // Foca no primeiro input da tela
+      const inp = target.querySelector('input, textarea');
+      if (inp) setTimeout(() => inp.focus(), 100);
+    }
+  }, 50);
+}
+
+/* ── Valida a tela atual antes de avançar ── */
+function validate(idx) {
+  const errEl = document.getElementById('err-' + idx);
+  let valid = true;
+
+  if (idx === 1) {
+    valid = document.getElementById('q1').value.trim() !== '';
+  } else if (idx === 2) {
+    const ddd = document.getElementById('q2-ddd').value.trim();
+    const num = document.getElementById('q2-num').value.trim();
+    valid = ddd.length >= 2 && num.length >= 8;
+  } else if (idx === 3) {
+    valid = document.getElementById('q3').value.trim() !== '';
+  } else if (OPTION_SCREENS.includes(idx)) {
+    valid = !!selectedOptions[idx];
+  } else if ([8].includes(idx)) {
+    valid = document.getElementById('q' + idx).value.trim() !== '';
+  } else if ([9, 10, 11].includes(idx)) {
+    valid = document.getElementById('q' + idx).value.trim().length >= 10;
+  }
+
+  if (errEl) errEl.classList.toggle('show', !valid);
+  return valid;
+}
+
+/* ── Salva resposta atual ── */
+function saveAnswer(idx) {
+  if (idx === 1) {
+    answers['nome'] = document.getElementById('q1').value.trim();
+  } else if (idx === 2) {
+    answers['whatsapp'] = '(' + document.getElementById('q2-ddd').value.trim() + ') ' +
+                          document.getElementById('q2-num').value.trim();
+  } else if (idx === 3) {
+    answers['cidade'] = document.getElementById('q3').value.trim();
+  } else if (OPTION_SCREENS.includes(idx)) {
+    const labels = { 4:'capital', 5:'experiencia', 6:'objetivo', 7:'profissao' };
+    answers[labels[idx]] = selectedOptions[idx];
+  } else if (idx === 8) {
+    answers['instagram'] = document.getElementById('q8').value.trim();
+  } else if (idx === 9) {
+    answers['motivacao'] = document.getElementById('q9').value.trim();
+  } else if (idx === 10) {
+    answers['diferencial'] = document.getElementById('q10').value.trim();
+  } else if (idx === 11) {
+    answers['pergunta_livre'] = document.getElementById('q11').value.trim();
+  }
+}
+
+/* ── Avançar ── */
+function next() {
+  if (currentScreen >= 1 && currentScreen <= TOTAL_QUESTIONS) {
+    if (!validate(currentScreen)) return;
+    saveAnswer(currentScreen);
+  }
+  goTo(currentScreen + 1);
+}
+
+/* ── Voltar ── */
+function goUp() {
+  if (currentScreen > 0) goTo(currentScreen - 1);
+}
+
+/* ── Botão ↓ ── */
+function goDown() {
+  if (currentScreen < TOTAL_QUESTIONS + 1) next();
+}
+
+/* ── Seleciona opção de múltipla escolha ── */
+function selectOption(el, screenIdx) {
+  const container = document.getElementById('opts-' + screenIdx);
+  container.querySelectorAll('.option-item').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedOptions[screenIdx] = el.dataset.val;
+  const errEl = document.getElementById('err-' + screenIdx);
+  if (errEl) errEl.classList.remove('show');
+}
+
+/* ── Submete formulário ── */
+async function submitForm() {
+  if (!validate(11)) return;
+  saveAnswer(11);
+
+  // ============================================================
+  //  👇 COLE A URL DO SEU WEBHOOK DO MAKE AQUI ABAIXO
+  // ============================================================
+  const MAKE_WEBHOOK_URL = 'https://hook.us2.make.com/ubyg39i9heysa3kb51at4xmd9psfbbi8';
+  // ============================================================
+
+  // Botão de envio: estado de carregando
+  const btn = document.querySelector('#screen-11 .btn-next');
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  // Monta payload organizado para o Make
+  const payload = {
+    nome:          answers.nome         || '',
+    whatsapp:      answers.whatsapp     || '',
+    cidade:        answers.cidade       || '',
+    capital:       answers.capital      || '',
+    experiencia:   answers.experiencia  || '',
+    objetivo:      answers.objetivo     || '',
+    profissao:     answers.profissao    || '',
+    instagram:     answers.instagram    || '',
+    motivacao:     answers.motivacao    || '',
+    diferencial:   answers.diferencial  || '',
+    pergunta_livre:answers.pergunta_livre|| '',
+    data_hora:     new Date().toLocaleString('pt-BR', { timeZone: 'America/Fortaleza' })
+  };
+
+  console.log('=== ENVIANDO PARA O MAKE ===', payload);
+
+  try {
+    const formData = new URLSearchParams();
+    Object.entries(payload).forEach(([k, v]) => formData.append(k, v));
+
+    await fetch(MAKE_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
+      mode: 'no-cors'
+    });
+    goTo(TOTAL_QUESTIONS + 1);
+  } catch (err) {
+    console.error('Erro ao enviar:', err);
+    goTo(TOTAL_QUESTIONS + 1);
+  }
+}
+
+/* ── Teclado: Enter avança, Escape retorna ── */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    const active = document.querySelector('.screen.active');
+    // Não avança em textarea com Shift+Enter
+    if (active && !active.querySelector('textarea:focus')) {
+      e.preventDefault();
+      if (currentScreen <= TOTAL_QUESTIONS) next();
+    }
+  }
+  if (e.key === 'Escape') goUp();
+  // Teclas A–G selecionam opções nas telas de múltipla escolha
+  if (OPTION_SCREENS.includes(currentScreen)) {
+    const map = { a:0, b:1, c:2, d:3, e:4, f:5, g:6 };
+    const k = e.key.toLowerCase();
+    if (map[k] !== undefined) {
+      const opts = document.querySelectorAll('#opts-' + currentScreen + ' .option-item');
+      if (opts[map[k]]) opts[map[k]].click();
+    }
+  }
+});
+
+/* ── Inicializa ── */
+updateUI();
+</script>
+</body>
+</html>
